@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.grafana.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.grafana.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+spec:
+  type: {{ .Values.grafana.service.type }}
+  ports:
+  - port: {{ .Values.grafana.service.port }}
+    targetPort: {{ .Values.grafana.service.port }}
+    {{- if eq .Values.grafana.service.type "NodePort" }}
+    nodePort: {{ .Values.grafana.service.nodePort }}
+    {{- end }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.grafana.name }} 

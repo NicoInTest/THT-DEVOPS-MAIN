@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-application-logs
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    grafana_dashboard: "1"
+    app: {{ .Values.grafana.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+data:
+  application_logs_dashboard.json: |-
+{{- .Files.Get "dashboards/application-logs.json" | nindent 4 }} 

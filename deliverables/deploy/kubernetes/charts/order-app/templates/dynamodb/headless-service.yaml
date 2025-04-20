@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dynamodb.name }}-headless
+  namespace: {{ .Values.namespaces.app }}
+  labels:
+    app: {{ .Values.dynamodb.name }}
+spec:
+  clusterIP: None
+  ports:
+  - port: {{ .Values.dynamodb.service.port }}
+    targetPort: {{ .Values.dynamodb.service.port }}
+    protocol: TCP
+    name: dynamodb
+  selector:
+    app: {{ .Values.dynamodb.name }} 

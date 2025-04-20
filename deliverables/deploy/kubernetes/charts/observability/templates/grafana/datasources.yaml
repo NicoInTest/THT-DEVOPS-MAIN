@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.grafana.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+data:
+  datasources.yaml: |-
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://{{ .Values.prometheus.name }}.{{ .Values.namespaces.observability }}.svc.cluster.local:{{ .Values.prometheus.service.port }}
+      access: proxy
+      isDefault: true
+    - name: Loki
+      type: loki
+      url: http://{{ .Values.loki.name }}.{{ .Values.namespaces.observability }}.svc.cluster.local:{{ .Values.loki.service.port }}
+      access: proxy 

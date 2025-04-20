@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.dynamodb.name }}
+  namespace: {{ .Values.namespaces.app }}
+  labels:
+    app: {{ .Values.dynamodb.name }}
+spec:
+  serviceName: {{ .Values.dynamodb.name }}
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Values.dynamodb.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dynamodb.name }}
+    spec:
+      containers:
+      - name: {{ .Values.dynamodb.name }}
+        image: "{{ .Values.dynamodb.image.repository }}:{{ .Values.dynamodb.image.tag }}"
+        imagePullPolicy: {{ .Values.dynamodb.image.pullPolicy }}
+        command: ["java"]
+        args:
+          - "-jar"
+          - "DynamoDBLocal.jar"
+          - "-sharedDb"
+          - "-dbPath"
+          - "/home/dynamodblocal/data"
+        workingDir: /home/dynamodblocal
+        ports:
+        - containerPort: {{ .Values.dynamodb.service.port }}
+          name: dynamodb
+        volumeMounts:
+        - name: dynamodb-data
+          mountPath: /home/dynamodblocal/data
+        resources:
+          requests:
+            cpu: {{ .Values.dynamodb.resources.requests.cpu }}
+            memory: {{ .Values.dynamodb.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.dynamodb.resources.limits.cpu }}
+            memory: {{ .Values.dynamodb.resources.limits.memory }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.dynamodb.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.dynamodb.service.port }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+  volumeClaimTemplates:
+  - metadata:
+      name: dynamodb-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.dynamodb.persistence.storageClass }}
+      storageClassName: {{ .Values.dynamodb.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.dynamodb.persistence.size }} 

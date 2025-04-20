@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.promtail.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.promtail.name }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.promtail.name }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.promtail.name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.promtail.name }}
+  namespace: {{ .Values.namespaces.observability }} 

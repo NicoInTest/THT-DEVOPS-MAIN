@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.promtail.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.promtail.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.promtail.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.promtail.service.port }}"
+    spec:
+      serviceAccountName: {{ .Values.promtail.name }}
+      containers:
+      - name: {{ .Values.promtail.name }}
+        image: "{{ .Values.promtail.image.repository }}:{{ .Values.promtail.image.tag }}"
+        imagePullPolicy: {{ .Values.promtail.image.pullPolicy }}
+        args:
+        - -config.file=/etc/promtail/promtail.yaml
+        ports:
+        - containerPort: {{ .Values.promtail.service.port }}
+          name: http-metrics
+        volumeMounts:
+        - name: config
+          mountPath: /etc/promtail
+        - name: run
+          mountPath: /run/promtail
+        - name: pods
+          mountPath: /var/log/pods
+          readOnly: true
+        - name: docker
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            cpu: {{ .Values.promtail.resources.requests.cpu }}
+            memory: {{ .Values.promtail.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.promtail.resources.limits.cpu }}
+            memory: {{ .Values.promtail.resources.limits.memory }}
+      volumes:
+      - name: config
+        configMap:
+          name: promtail-config
+      - name: run
+        hostPath:
+          path: /run/promtail
+      - name: docker
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: pods
+        hostPath:
+          path: /var/log/pods 

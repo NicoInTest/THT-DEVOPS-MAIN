@@ -1,0 +1,91 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: dynamodb-local
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "./data"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./dynamodb-data:/home/dynamodblocal/data
+    working_dir: /home/dynamodblocal
+    healthcheck:
+      test: ["CMD-SHELL", 'if [ "$(curl -s -o /dev/null -I -w ''%{http_code}'' http://localhost:8000)" == "400" ]; then exit 0; else exit 1; fi']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - microservices-net
+
+  dynamodb-init:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.init
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_DEFAULT_REGION=us-west-2
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  order-api:
+    container_name: order-api
+    build:
+      context: ./order-api
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_DEFAULT_REGION=us-west-2
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - ORDER_PROCESSOR_URL=http://order-processor:8000
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+      order-processor:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - microservices-net
+    volumes:
+      - ./order-api/src:/app:ro
+
+  order-processor:
+    container_name: order-processor
+    build:
+      context: ./order-processor
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_DEFAULT_REGION=us-west-2
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - microservices-net
+    volumes:
+      - ./order-processor/src:/app:ro
+
+networks:
+  microservices-net:
+    driver: bridge

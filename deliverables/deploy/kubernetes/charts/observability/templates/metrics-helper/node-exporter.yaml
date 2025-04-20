@@ -1,0 +1,75 @@
+{{- if .Values.nodeExporter.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.nodeExporter.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.nodeExporter.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.nodeExporter.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nodeExporter.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.nodeExporter.service.port }}"
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: {{ .Values.nodeExporter.name }}
+        image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
+        imagePullPolicy: {{ .Values.nodeExporter.image.pullPolicy }}
+        args:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --web.listen-address=:{{ .Values.nodeExporter.service.port }}
+        ports:
+        - containerPort: {{ .Values.nodeExporter.service.port }}
+          name: metrics
+        resources:
+          requests:
+            cpu: {{ .Values.nodeExporter.resources.requests.cpu }}
+            memory: {{ .Values.nodeExporter.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.nodeExporter.resources.limits.cpu }}
+            memory: {{ .Values.nodeExporter.resources.limits.memory }}
+        volumeMounts:
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nodeExporter.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.nodeExporter.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.nodeExporter.service.port }}"
+spec:
+  type: {{ .Values.nodeExporter.service.type }}
+  ports:
+  - port: {{ .Values.nodeExporter.service.port }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    app: {{ .Values.nodeExporter.name }}
+{{- end }} 

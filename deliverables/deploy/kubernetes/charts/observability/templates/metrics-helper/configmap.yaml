@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-helper
+  namespace: observability
+  labels:
+    app: observability
+data:
+  promql-reference.txt: |-
+    # Application Health Checks
+    # Check if services are up
+    up{job=~"order-api|order-processor"}
+
+    # HTTP Request Rate by Service
+    sum(rate(http_requests_total[5m])) by (service)
+
+    # HTTP Error Rate (5xx) by Service
+    sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service)
+
+    # HTTP Response Time p95 by Service
+    histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+
+    # System Resource Metrics
+    # CPU Usage by Pod
+    sum(rate(container_cpu_usage_seconds_total{namespace=~"app-order|observability", container!=""}[1m])) by (pod) * 100
+
+    # Memory Usage by Pod
+    sum(container_memory_usage_bytes{namespace=~"app-order|observability", container!=""}) by (pod)
+
+    # Network I/O by Pod
+    # Receive:
+    sum(rate(container_network_receive_bytes_total{namespace=~"app-order|observability"}[1m])) by (pod)
+    # Transmit:
+    sum(rate(container_network_transmit_bytes_total{namespace=~"app-order|observability"}[1m])) by (pod)
+
+    # Disk I/O by Pod
+    # Read:
+    sum(rate(container_fs_reads_bytes_total{namespace=~"app-order|observability"}[1m])) by (pod)
+    # Write:
+    sum(rate(container_fs_writes_bytes_total{namespace=~"app-order|observability"}[1m])) by (pod)
+
+    # Business Metrics
+    # Order Creation Rate
+    sum(rate(orders_created_total[5m]))
+
+    # Order Processing Duration
+    histogram_quantile(0.95, sum(rate(order_processing_duration_milliseconds_bucket[5m])) by (le))
+
+    # Orders by Status
+    sum(rate(orders_by_status_total[5m])) by (status)
+
+    # Low Inventory Items
+    sum(low_inventory_items)
+
+    # Alert Rules Templates
+    # High Error Rate Alert
+    sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service) > 0.05
+
+    # High Response Time Alert
+    histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 1.0
+
+    # High CPU Usage Alert
+    sum(rate(container_cpu_usage_seconds_total{namespace=~"app-order|observability", container!=""}[1m])) by (pod) * 100 > 80
+
+    # High Memory Usage Alert
+    sum(container_memory_usage_bytes{namespace=~"app-order|observability", container!=""}) by (pod) / sum(container_spec_memory_limit_bytes{namespace=~"app-order|observability", container!=""}) by (pod) * 100 > 80 

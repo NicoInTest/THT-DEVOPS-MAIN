@@ -1,0 +1,18 @@
+# This PVC is no longer needed as we use volumeClaimTemplates in the StatefulSet
+# Keeping it as reference but disabled
+{{- if .Values.dynamodb.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.dynamodb.name }}-pvc
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.dynamodb.persistence.size }}
+  {{- if .Values.dynamodb.persistence.storageClass }}
+  storageClassName: {{ .Values.dynamodb.persistence.storageClass }}
+  {{- end }}
+{{- end }} 

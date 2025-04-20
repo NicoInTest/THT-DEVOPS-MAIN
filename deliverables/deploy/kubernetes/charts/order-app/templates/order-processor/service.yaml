@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.orderProcessor.name }}
+  namespace: {{ .Values.namespaces.app }}
+  labels:
+    app: {{ .Values.orderProcessor.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.orderProcessor.service.port }}"
+spec:
+  type: {{ .Values.orderProcessor.service.type }}
+  ports:
+  - port: {{ .Values.orderProcessor.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.orderProcessor.name }} 

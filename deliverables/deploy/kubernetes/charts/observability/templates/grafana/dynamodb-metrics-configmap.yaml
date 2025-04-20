@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dynamodb-metrics
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    grafana_dashboard: "1"
+    app: {{ .Values.grafana.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+data:
+  dynamodb_dashboard.json: |-
+{{ .Files.Get "dashboards/dynamodb-metrics.json" | indent 4 }} 

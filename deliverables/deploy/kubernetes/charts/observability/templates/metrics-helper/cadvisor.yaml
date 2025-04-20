@@ -1,0 +1,86 @@
+{{- if .Values.cadvisor.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.cadvisor.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.cadvisor.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.cadvisor.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.cadvisor.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.cadvisor.service.port }}"
+    spec:
+      containers:
+      - name: {{ .Values.cadvisor.name }}
+        image: "{{ .Values.cadvisor.image.repository }}:{{ .Values.cadvisor.image.tag }}"
+        imagePullPolicy: {{ .Values.cadvisor.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.cadvisor.service.port }}
+          name: metrics
+        resources:
+          requests:
+            cpu: {{ .Values.cadvisor.resources.requests.cpu }}
+            memory: {{ .Values.cadvisor.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.cadvisor.resources.limits.cpu }}
+            memory: {{ .Values.cadvisor.resources.limits.memory }}
+        volumeMounts:
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: var-run
+          mountPath: /var/run
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        - name: disk
+          mountPath: /dev/disk
+          readOnly: true
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: docker
+        hostPath:
+          path: /var/lib/docker
+      - name: disk
+        hostPath:
+          path: /dev/disk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cadvisor.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.cadvisor.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.cadvisor.service.port }}"
+spec:
+  type: {{ .Values.cadvisor.service.type }}
+  ports:
+  - port: {{ .Values.cadvisor.service.port }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    app: {{ .Values.cadvisor.name }}
+{{- end }} 

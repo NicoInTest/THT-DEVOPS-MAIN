@@ -1,0 +1,8 @@
+{{- if not .Values.skipNamespaceTemplate }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.app }}
+  labels:
+    name: {{ .Values.namespaces.app }}
+{{- end }} 

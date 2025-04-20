@@ -1,0 +1,117 @@
+{{- if .Values.kubeStateMetrics.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.kubeStateMetrics.name }}
+rules:
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - secrets
+  - nodes
+  - pods
+  - services
+  - resourcequotas
+  - replicationcontrollers
+  - limitranges
+  - persistentvolumeclaims
+  - persistentvolumes
+  - namespaces
+  - endpoints
+  verbs: ["list", "watch"]
+- apiGroups: ["apps"]
+  resources:
+  - statefulsets
+  - daemonsets
+  - deployments
+  - replicasets
+  verbs: ["list", "watch"]
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs: ["list", "watch"]
+- apiGroups: ["autoscaling"]
+  resources:
+  - horizontalpodautoscalers
+  verbs: ["list", "watch"]
+- apiGroups: ["policy"]
+  resources:
+  - poddisruptionbudgets
+  verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.kubeStateMetrics.name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.kubeStateMetrics.name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.kubeStateMetrics.name }}
+  namespace: {{ .Values.namespaces.observability }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.kubeStateMetrics.name }}
+  namespace: {{ .Values.namespaces.observability }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.kubeStateMetrics.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.kubeStateMetrics.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.kubeStateMetrics.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kubeStateMetrics.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.kubeStateMetrics.service.port }}"
+    spec:
+      serviceAccountName: {{ .Values.kubeStateMetrics.name }}
+      containers:
+      - name: {{ .Values.kubeStateMetrics.name }}
+        image: "{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}"
+        imagePullPolicy: {{ .Values.kubeStateMetrics.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.kubeStateMetrics.service.port }}
+          name: metrics
+        resources:
+          requests:
+            cpu: {{ .Values.kubeStateMetrics.resources.requests.cpu }}
+            memory: {{ .Values.kubeStateMetrics.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.kubeStateMetrics.resources.limits.cpu }}
+            memory: {{ .Values.kubeStateMetrics.resources.limits.memory }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.kubeStateMetrics.name }}
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    app: {{ .Values.kubeStateMetrics.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.kubeStateMetrics.service.port }}"
+spec:
+  type: {{ .Values.kubeStateMetrics.service.type }}
+  ports:
+  - port: {{ .Values.kubeStateMetrics.service.port }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    app: {{ .Values.kubeStateMetrics.name }}
+{{- end }} 

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-order-app-metrics
+  namespace: {{ .Values.namespaces.observability }}
+  labels:
+    grafana_dashboard: "1"
+    app: {{ .Values.grafana.name }}
+    {{- if .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- end }}
+data:
+  order_app_dashboard.json: |-
+{{- .Files.Get "dashboards/order-app-metrics.json" | nindent 4 }} 

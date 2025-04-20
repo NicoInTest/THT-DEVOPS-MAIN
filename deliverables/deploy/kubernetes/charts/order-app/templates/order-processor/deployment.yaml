@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.orderProcessor.name }}
+  namespace: {{ .Values.namespaces.app }}
+  labels:
+    app: {{ .Values.orderProcessor.name }}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Values.orderProcessor.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.orderProcessor.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: {{ .Values.orderProcessor.name }}
+        image: "{{ .Values.orderProcessor.image.repository }}:{{ .Values.orderProcessor.image.tag }}"
+        imagePullPolicy: {{ .Values.orderProcessor.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.orderProcessor.service.port }}
+          name: http
+        env:
+        - name: DYNAMODB_ENDPOINT
+          value: "http://{{ .Values.dynamodb.name }}.{{ .Values.namespaces.app }}.svc.cluster.local:{{ .Values.dynamodb.service.port }}"
+        - name: AWS_DEFAULT_REGION
+          value: {{ .Values.orderProcessor.env.AWS_DEFAULT_REGION }}
+        - name: AWS_REGION
+          value: {{ .Values.orderProcessor.env.AWS_DEFAULT_REGION }}
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.orderProcessor.env.AWS_ACCESS_KEY_ID }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.orderProcessor.env.AWS_SECRET_ACCESS_KEY }}
+        - name: DYNAMODB_TABLE
+          value: {{ .Values.orderProcessor.env.DYNAMODB_TABLE }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: {{ .Values.orderProcessor.resources.requests.cpu }}
+            memory: {{ .Values.orderProcessor.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.orderProcessor.resources.limits.cpu }}
+            memory: {{ .Values.orderProcessor.resources.limits.memory }}

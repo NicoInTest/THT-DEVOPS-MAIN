@@ -1,0 +1,1021 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "id": 2,
+  "title": "Order Application Metrics",
+  "uid": "order-app-metrics",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Application Health Status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 1}
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {"text": "DOWN", "color": "red"},
+                "1": {"text": "UP", "color": "green"}
+              }
+            }
+          ]
+        }
+      },
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {"expr": "up{job=~\"order-api|order-processor\"}", "legendFormat": "{{job}}"}
+      ]
+    },
+    {
+      "title": "Service Overview",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 3}
+    },
+    {
+      "title": "HTTP Request Rate by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {"expr": "sum by (job) (rate(http_requests_total{job=~\"order-api|order-processor\"}[5m]))", "legendFormat": "{{job}}"}
+      ]
+    },
+    {
+      "title": "HTTP Status Codes Over Time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byRegexp", "options": ".*2\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*3\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*4\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*5\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+          }
+        ]
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "Prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (status_code)(rate(http_requests_total{job=~\"order-api|order-processor\", status_code=~\"2..\"}[5m]))",
+          "legendFormat": "{{status_code}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "Prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (status_code)(rate(http_requests_total{job=~\"order-api|order-processor\", status_code=~\"3..\"}[5m]))",
+          "legendFormat": "{{status_code}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "Prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (status_code)(rate(http_requests_total{job=~\"order-api|order-processor\", status_code=~\"4..\"}[5m]))",
+          "legendFormat": "{{status_code}}",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "Prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (status_code)(rate(http_requests_total{job=~\"order-api|order-processor\", status_code=~\"5..\"}[5m]))",
+          "legendFormat": "{{status_code}}",
+          "range": true,
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Metrics",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 12}
+    },
+    {
+      "title": "HTTP Status Codes Distribution",
+      "type": "piechart",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "showLegend": true},
+        "pieType": "pie",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byRegexp", "options": ".*2\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*3\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*4\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*5\\d{2}.*"},
+            "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 13},
+      "targets": [
+        {"expr": "sum by (status_code) (increase(http_requests_total{job=~\"order-api|order-processor\"}[10m]))", "legendFormat": "HTTP {{status_code}}"}
+      ]
+    },
+    {
+      "title": "HTTP Response Time (p95) by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.5},
+              {"color": "red", "value": 1}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 16, "x": 8, "y": 13},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by(le, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "legendFormat": "{{job}} p95"}
+      ]
+    },
+    {
+      "title": "Response Time Percentiles by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 21},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by(le, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "legendFormat": "{{job}} p50"},
+        {"expr": "histogram_quantile(0.90, sum by(le, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "legendFormat": "{{job}} p90"},
+        {"expr": "histogram_quantile(0.95, sum by(le, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "legendFormat": "{{job}} p95"},
+        {"expr": "histogram_quantile(0.99, sum by(le, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "legendFormat": "{{job}} p99"}
+      ]
+    },
+    {
+      "title": "HTTP Status Codes by Service",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "showHeader": true,
+        "footer": {
+          "show": false,
+          "reducer": ["sum"],
+          "countRows": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "2xx"},
+            "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "3xx"},
+            "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "4xx"},
+            "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "5xx"},
+            "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
+      "targets": [
+        {"expr": "sum by (job) (increase(http_requests_total{status_code=~\"2..\", job=~\"order-api|order-processor\"}[5m]))", "format": "table", "instant": true},
+        {"expr": "sum by (job) (increase(http_requests_total{status_code=~\"3..\", job=~\"order-api|order-processor\"}[5m]))", "format": "table", "instant": true},
+        {"expr": "sum by (job) (increase(http_requests_total{status_code=~\"4..\", job=~\"order-api|order-processor\"}[5m]))", "format": "table", "instant": true},
+        {"expr": "sum by (job) (increase(http_requests_total{status_code=~\"5..\", job=~\"order-api|order-processor\"}[5m]))", "format": "table", "instant": true}
+      ],
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "job": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "Value #A": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate",
+                "alias": "2xx"
+              },
+              "Value #B": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate",
+                "alias": "3xx"
+              },
+              "Value #C": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate",
+                "alias": "4xx"
+              },
+              "Value #D": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate",
+                "alias": "5xx"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "API Endpoints",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29}
+    },
+    {
+      "title": "API Endpoints by Request Count",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Request Count",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 5}
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Request Count"},
+            "properties": [
+              {"id": "custom.width", "value": 150},
+              {"id": "displayName", "value": "Request Count (5m)"},
+              {"id": "unit", "value": "reqps"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Endpoint"},
+            "properties": [
+              {"id": "custom.width", "value": 300}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Service"},
+            "properties": [
+              {"id": "custom.width", "value": 150}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+      "targets": [
+        {"expr": "sum by (endpoint, job) (rate(http_requests_total{job=~\"order-api|order-processor\"}[5m]))", "format": "table", "instant": true}
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Request Count",
+              "endpoint": "Endpoint",
+              "job": "Service"
+            },
+            "indexByName": {
+              "Service": 0,
+              "Endpoint": 1,
+              "Request Count": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "API Endpoints Response Time (p95)",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.5},
+              {"color": "red", "value": 1}
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by(le, endpoint, job) (rate(http_request_duration_seconds_bucket{job=~\"order-api|order-processor\"}[5m])))", "instant": true, "legendFormat": "{{endpoint}} - {{job}}"}
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "P95 Response Time",
+              "endpoint": "Endpoint",
+              "job": "Service"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Order Processing",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 38}
+    },
+    {
+      "title": "Order Processing Duration Distribution",
+      "type": "heatmap",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "calculate": true,
+        "yAxis": {"decimals": 1, "unit": "s"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 39},
+      "targets": [
+        {"expr": "sum by (le) (rate(http_request_duration_seconds_bucket{job=\"order-processor\",endpoint=\"/process-order\"}[5m]))", "legendFormat": "{{le}}"}
+      ]
+    },
+    {
+      "title": "Order Pipeline Throughput",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null}
+            ]
+          },
+          "unit": "orders/min"
+        }
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 39},
+      "targets": [
+        {"expr": "sum(increase(orders_created_total[1m]) or vector(0)) * 60", "legendFormat": "Orders per minute"}
+      ]
+    },
+    {
+      "title": "Order Processing Success Rate",
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 95},
+              {"color": "green", "value": 99}
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {"orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 39},
+      "targets": [
+        {"expr": "(sum(increase(orders_processed_total{status=\"confirmed\"}[1m]) or vector(0)) / (sum(increase(orders_processed_total[1m])) or vector(0.001))) * 100", "legendFormat": "Success Rate"}
+      ]
+    },
+    {
+      "title": "Order Processing Status Breakdown",
+      "type": "piechart",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "showLegend": true},
+        "pieType": "pie",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 47},
+      "targets": [
+        {"expr": "sum by (status_code) (increase(http_requests_total{job=\"order-processor\",endpoint=\"/process-order\"}[5m]))", "legendFormat": "Status {{status_code}}"}
+      ]
+    },
+    {
+      "title": "Error Rate by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 0.1}
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 47},
+      "targets": [
+        {"expr": "sum by (job) (rate(http_requests_total{status_code=~\"5..\", job=~\"order-api|order-processor\"}[5m])) / sum by (job) (rate(http_requests_total{job=~\"order-api|order-processor\"}[5m]) > 0)", "legendFormat": "{{job}}"}
+      ]
+    },
+    {
+      "title": "Performance & Resources",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 55}
+    },
+    {
+      "title": "API Apdex Score",
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "description": "Application Performance Index - measure of user satisfaction with response times",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.7},
+              {"color": "green", "value": 0.9}
+            ]
+          }
+        }
+      },
+      "options": {"orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 56},
+      "targets": [
+        {"expr": "sum(rate(http_request_duration_seconds_bucket{le=\"0.25\", job=~\"order-api|order-processor\"}[5m]) or vector(0)) / sum(rate(http_request_duration_seconds_count{job=~\"order-api|order-processor\"}[5m]) > 0 or vector(0.001))", "legendFormat": "Apdex Score"}
+      ]
+    },
+    {
+      "title": "CPU Usage by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 1, "fillOpacity": 10},
+          "unit": "percentunit"
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 56},
+      "targets": [
+        {"expr": "rate(process_cpu_seconds_total{job=~\"order-api|order-processor\"}[1m])", "legendFormat": "{{job}}"},
+        {"expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{pod=~\"order-api-.*|order-processor-.*\"}[1m]))", "legendFormat": "{{pod}} (container)"}
+      ]
+    },
+    {
+      "title": "Memory Usage by Service",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 1, "fillOpacity": 10},
+          "unit": "bytes"
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 56},
+      "targets": [
+        {"expr": "process_resident_memory_bytes{job=~\"order-api|order-processor\"}", "legendFormat": "{{job}}"},
+        {"expr": "sum by (pod) (container_memory_working_set_bytes{pod=~\"order-api-.*|order-processor-.*\"})", "legendFormat": "{{pod}} (container)"}
+      ]
+    },
+    {
+      "title": "Logs",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 64}
+    },
+    {
+      "title": "Application Logs",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "gridPos": {"h": 18, "w": 24, "x": 0, "y": 62},
+      "targets": [
+        {
+          "expr": "{container=~\"$service\"} !~ \"/metrics\" |~ \"(?i)$log_level\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Log Volume",
+      "type": "timeseries",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 81},
+      "targets": [
+        {"expr": "sum by (container) (count_over_time({container=~\"$service\"}[$__interval]))", "legendFormat": "{{container}}", "refId": "A"}
+      ]
+    },
+    {
+      "title": "Reliability Metrics",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 81}
+    },
+    {
+      "title": "Error Budget",
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 85
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 82},
+      "targets": [
+        {
+          "expr": "100 * (1 - sum(rate(http_requests_total{job=~\"$service\", status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total{job=~\"$service\"}[1h])))",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Latency Distribution (P50, P90, P99)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 82},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "legendFormat": "P90",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "time": {"from": "now-30m", "to": "now"},
+  "timepicker": {"refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]},
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "Prometheus"
+        },
+        "definition": "label_values(up, job)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": {
+          "query": "label_values(up{job=~\"order-api|order-processor\"}, job)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "log_level",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": ".*"
+          },
+          {
+            "selected": false,
+            "text": "INFO",
+            "value": "INFO"
+          },
+          {
+            "selected": false,
+            "text": "WARNING",
+            "value": "WARNING"
+          },
+          {
+            "selected": false,
+            "text": "ERROR",
+            "value": "ERROR"
+          },
+          {
+            "selected": false,
+            "text": "CRITICAL",
+            "value": "CRITICAL"
+          },
+          {
+            "selected": false,
+            "text": "DEBUG",
+            "value": "DEBUG"
+          }
+        ],
+        "query": ".*,INFO,WARNING,ERROR,CRITICAL,DEBUG",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  }
+} 

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-system-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+    tier: monitoring
+data:
+  system-metrics-dashboard.json: |-
+{{ .Files.Get "dashboards/system-metrics.json" | indent 4 }}

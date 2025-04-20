@@ -1,0 +1,177 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dynamodb-init
+  namespace: {{ .Values.namespaces.app }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: dynamodb-init
+        image: python:3.12-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          apk add --no-cache curl
+          pip install boto3
+          cat > /tmp/init-dynamodb.py << 'EOF'
+          import boto3
+          import time
+          import logging
+          from botocore.exceptions import ClientError
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          def wait_for_dynamodb(dynamodb):
+              """Wait for DynamoDB to become available"""
+              retries = 0
+              max_retries = 20  # Increased retries for reliability
+              while retries < max_retries:
+                  try:
+                      tables = dynamodb.tables.all()
+                      for table in tables:
+                          logger.info(f"Found existing table: {table.name}")
+                      logger.info(f"DynamoDB is available")
+                      return True
+                  except Exception as e:
+                      logger.info(str(e))
+                      logger.info(f"Waiting for DynamoDB... ({retries}/{max_retries})")
+                      retries += 1
+                      time.sleep(5)
+              return False
+
+          def create_orders_table(dynamodb):
+              """Create orders table"""
+              try:
+                  table = dynamodb.create_table(
+                      TableName="orders",
+                      KeySchema=[{"AttributeName": "order_id", "KeyType": "HASH"}],
+                      AttributeDefinitions=[
+                          {"AttributeName": "order_id", "AttributeType": "S"}
+                      ],
+                      BillingMode="PAY_PER_REQUEST",
+                  )
+                  logger.info("Created orders table")
+                  table.meta.client.get_waiter('table_exists').wait(TableName='orders')
+                  logger.info("Orders table is now active")
+                  return table
+              except ClientError as e:
+                  if e.response["Error"]["Code"] == "ResourceInUseException":
+                      logger.info("Orders table already exists")
+                      return dynamodb.Table("orders")
+                  else:
+                      logger.error(f"Error creating orders table: {e}")
+                      raise
+
+          def create_inventory_table(dynamodb):
+              """Create inventory table"""
+              try:
+                  table = dynamodb.create_table(
+                      TableName="inventory",
+                      KeySchema=[{"AttributeName": "product_id", "KeyType": "HASH"}],
+                      AttributeDefinitions=[
+                          {"AttributeName": "product_id", "AttributeType": "S"}
+                      ],
+                      BillingMode="PAY_PER_REQUEST",
+                  )
+                  logger.info("Created inventory table")
+                  table.meta.client.get_waiter('table_exists').wait(TableName='inventory')
+                  logger.info("Inventory table is now active")
+                  return table
+              except ClientError as e:
+                  if e.response["Error"]["Code"] == "ResourceInUseException":
+                      logger.info("Inventory table already exists")
+                      return dynamodb.Table("inventory")
+                  else:
+                      logger.error(f"Error creating inventory table: {e}")
+                      raise
+
+          def seed_inventory_data(dynamodb):
+              """Seed initial inventory data"""
+              table = dynamodb.Table("inventory")
+              items = [
+                  {
+                      "product_id": "PROD001",
+                      "name": "Sample Product 1",
+                      "price": 29,
+                      "stock": 100,
+                  },
+                  {
+                      "product_id": "PROD002",
+                      "name": "Sample Product 2",
+                      "price": 49,
+                      "stock": 50,
+                  },
+              ]
+
+              for item in items:
+                  try:
+                      table.put_item(Item=item)
+                      logger.info(f"Added inventory item: {item['product_id']}")
+                  except Exception as e:
+                      logger.error(f"Error adding inventory item {item['product_id']}: {e}")
+              
+              logger.info("Seeded inventory data")
+
+          def main():
+              import os
+              DDB_ENDPOINT = "http://{{ .Values.dynamodb.name }}.{{ .Values.namespaces.app }}.svc.cluster.local:{{ .Values.dynamodb.service.port }}"
+              logger.info(f"Connecting to DynamoDB at {DDB_ENDPOINT}")
+              
+              dynamodb = boto3.resource(
+                  "dynamodb",
+                  endpoint_url=DDB_ENDPOINT,
+                  region_name="{{ .Values.orderApi.env.AWS_DEFAULT_REGION }}",
+                  aws_access_key_id="{{ .Values.orderApi.env.AWS_ACCESS_KEY_ID }}",
+                  aws_secret_access_key="{{ .Values.orderApi.env.AWS_SECRET_ACCESS_KEY }}",
+              )
+
+              if not wait_for_dynamodb(dynamodb):
+                  logger.error("DynamoDB did not become available")
+                  return 1
+
+              create_orders_table(dynamodb)
+              create_inventory_table(dynamodb)
+              seed_inventory_data(dynamodb)
+              logger.info("Initialization complete")
+              return 0
+
+          if __name__ == "__main__":
+              exit(main())
+          EOF
+          
+          # Execute the initialization script with retries
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+          SUCCESS=false
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ] && [ "$SUCCESS" != "true" ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS to initialize DynamoDB"
+            if python /tmp/init-dynamodb.py; then
+              SUCCESS=true
+              echo "DynamoDB initialization successful"
+            else
+              echo "DynamoDB initialization failed, attempt $ATTEMPT"
+              ATTEMPT=$((ATTEMPT+1))
+              if [ $ATTEMPT -le $MAX_ATTEMPTS ]; then
+                echo "Retrying in 10 seconds..."
+                sleep 10
+              fi
+            fi
+          done
+          
+          if [ "$SUCCESS" != "true" ]; then
+            echo "All attempts failed. DynamoDB initialization unsuccessful"
+            exit 1
+          fi
+          
+          exit 0 

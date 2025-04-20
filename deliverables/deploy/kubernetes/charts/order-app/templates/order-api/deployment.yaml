@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.orderApi.name }}
+  namespace: {{ .Values.namespaces.app }}
+  labels:
+    app: {{ .Values.orderApi.name }}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Values.orderApi.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.orderApi.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: {{ .Values.orderApi.name }}
+        image: "{{ .Values.orderApi.image.repository }}:{{ .Values.orderApi.image.tag }}"
+        imagePullPolicy: {{ .Values.orderApi.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.orderApi.service.port }}
+          name: http
+        env:
+        - name: DYNAMODB_ENDPOINT
+          value: "http://{{ .Values.dynamodb.name }}.{{ .Values.namespaces.app }}.svc.cluster.local:{{ .Values.dynamodb.service.port }}"
+        - name: AWS_DEFAULT_REGION
+          value: {{ .Values.orderApi.env.AWS_DEFAULT_REGION }}
+        - name: AWS_REGION
+          value: {{ .Values.orderApi.env.AWS_DEFAULT_REGION }}
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.orderApi.env.AWS_ACCESS_KEY_ID }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.orderApi.env.AWS_SECRET_ACCESS_KEY }}
+        - name: DYNAMODB_TABLE
+          value: {{ .Values.orderApi.env.DYNAMODB_TABLE }}
+        - name: ORDER_PROCESSOR_URL
+          value: "http://{{ .Values.orderProcessor.name }}.{{ .Values.namespaces.app }}.svc.cluster.local:{{ .Values.orderProcessor.service.port }}"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: {{ .Values.orderApi.resources.requests.cpu }}
+            memory: {{ .Values.orderApi.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.orderApi.resources.limits.cpu }}
+            memory: {{ .Values.orderApi.resources.limits.memory }}

@@ -1,0 +1,16 @@
+# Terraform files
+*.tfstate
+*.tfstate.backup
+.terraform/
+backend.hcl
+.terraform.lock.hcl
+
+# Credentials
+credentials.tfvars
+*.auto.tfvars
+
+# Temporary files
+*~
+\#*\#
+.*.swp
+.DS_Store

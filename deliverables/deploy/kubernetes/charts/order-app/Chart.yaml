@@ -1,0 +1,9 @@
+apiVersion: v2
+name: order-app
+description: Order application microservices with DynamoDB
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: DevOps Engineer
+    email: devops@example.com 
